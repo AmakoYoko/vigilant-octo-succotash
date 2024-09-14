@@ -1,0 +1,57 @@
+name: CI
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'runnerID'
+        default: 'john-doe'
+        required: false
+        type: string
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Enable TS
+      run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
+    - run: Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    - run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+    - run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "@Dfujbx123" -Force)
+   
+    - name: OpenVPN
+      run: mkdir C:\Users\runneradmin\OpenVPN\config\test
+    - run: |
+        $headers = @{
+          "Authorization" = "token $Env:GP_KEY"
+        }
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AmakoYoko/redesigned-eureka/main/config_openvpn_bridge_laura.ovpn" -Headers $headers -OutFile "C:\Users\runneradmin\OpenVPN\config\test\test.ovpn"
+    
+    - run: Invoke-WebRequest -Uri "https://swupdate.openvpn.org/community/releases/OpenVPN-2.6.12-I001-amd64.msi" -OutFile "C:\temp\openvpn.msi"
+    - run: Start-Process msiexec.exe -ArgumentList "/i `"C:\temp\openvpn.msi`" /quiet /norestart" -Wait
+    - run: |
+        "laura" | Add-Content C:\Users\runneradmin\OpenVPN\config\test\credentials.txt 
+        $Env:MAIN_PASSWORD | Add-Content C:\Users\runneradmin\OpenVPN\config\test\credentials.txt 
+        Start-Process -FilePath "C:\Program Files\OpenVPN\bin\openvpn-gui.exe" -ArgumentList "--command", "connect", "test.ovpn"
+        Start-Sleep -Seconds 5
+        New-PSDrive -Name "Z" -PSProvider FileSystem -Root "\\192.168.1.254\Main" -Credential (New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "lamas", (ConvertTo-SecureString "dfujbx123" -AsPlainText -Force)) -Persist
+    - name: Create PowerShell script
+      run: |
+          $scriptPath = "C:\Scripts\Set-Language.ps1"
+          if (-not (Test-Path -Path (Split-Path $scriptPath))) {
+              New-Item -Path (Split-Path $scriptPath) -ItemType Directory
+          }
+          $scriptContent = @"
+          Set-WinUserLanguageList -LanguageList fr-FR -Force
+          "@
+          Set-Content -Path $scriptPath -Value $scriptContent
+
+    - name: Configure script to run at startup
+      run: |
+          $scriptPath = "C:\Scripts\Set-Language.ps1"
+          $regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+          Set-ItemProperty -Path $regPath -Name "SetLanguage" -Value "powershell.exe -ExecutionPolicy Bypass -File $scriptPath"
+    - name: fin
+      run: (Get-NetIPAddress | Where-Object { $_.InterfaceAlias -eq "OpenVPN TAP-Windows6" -and $_.AddressFamily -eq "IPv4" }).IPAddress
+    - name: kpalv
+      run: while ($true) { Start-Sleep -Seconds 60 }
