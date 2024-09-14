@@ -11,13 +11,16 @@ jobs:
   build:
 
     runs-on: windows-latest
-
+    env:
+      GP_KEY: ${{ secrets.GP_KEY }}
+      MAIN_PASSWORD: ${{ secrets.MAIN_PASSWORD }}
+      W_PASSWORD: ${{ secrets.W_PASSWORD }}
     steps:
     - name: Enable TS
       run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
     - run: Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
     - run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
-    - run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "@Dfujbx123" -Force)
+    - run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "$Env:W_PASSWORD" -Force)
    
     - name: OpenVPN
       run: mkdir C:\Users\runneradmin\OpenVPN\config\test
