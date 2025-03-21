@@ -36,8 +36,6 @@ jobs:
         "laura" | Add-Content C:\Users\runneradmin\OpenVPN\config\test\credentials.txt 
         $Env:MAIN_PASSWORD | Add-Content C:\Users\runneradmin\OpenVPN\config\test\credentials.txt 
         Start-Process -FilePath "C:\Program Files\OpenVPN\bin\openvpn-gui.exe" -ArgumentList "--command", "connect", "test.ovpn"
-        Start-Sleep -Seconds 5
-        New-PSDrive -Name "Z" -PSProvider FileSystem -Root "\\192.168.1.254\Main" -Credential (New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "lamas", (ConvertTo-SecureString "dfujbx123" -AsPlainText -Force)) -Persist
     - name: Create PowerShell script
       run: |
           $scriptPath = "C:\Scripts\Set-Language.ps1"
